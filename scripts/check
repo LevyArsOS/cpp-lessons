@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Build all lesson tests with warnings as errors and execute them. Benchmarks are not run here.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if command -v cmake >/dev/null 2>&1 && command -v ctest >/dev/null 2>&1; then
+  cmake -B build -DCMAKE_BUILD_TYPE=Release
+  cmake --build build --config Release
+  ctest --test-dir build --output-on-failure
+  exit 0
+fi
+
+command -v g++ >/dev/null 2>&1 || { echo "g++ or cmake not found" >&2; exit 1; }
+mkdir -p build/bin
+shopt -s nullglob
+tests=(tests/**/*_test.cpp tests/*_test.cpp)
+for src in "${tests[@]}"; do
+  out="build/bin/$(basename "${src%.cpp}")"
+  g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Ilessons "$src" -o "$out"
+  "$out"
+done
+echo "All C++ checks passed (${#tests[@]} test suites)."

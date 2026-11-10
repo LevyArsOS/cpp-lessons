@@ -1,0 +1,75 @@
+# Server-side copy of the local git hooks: hooks don't run on GitHub merges or web edits.
+# Required checks for bin/gh-protect: "check", "hygiene", "secrets".
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+env:
+  GITLEAKS_VERSION: "8.30.1"
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Tests and coverage (scripts/check or make check)
+        run: |
+          if [ -x scripts/check ]; then scripts/check
+          elif [ -f Makefile ] && grep -qE '^check:' Makefile; then make check
+          else echo "::error::add scripts/check (unit, integration and chaos tests with a coverage threshold)"; exit 1; fi
+
+  hygiene:
+    name: hygiene
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+      - name: Branch and commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          set -u
+          fail=0
+          err() { echo "::error::$*"; fail=1; }
+          BRANCH_RE='^(feature|bugfix|release|hotfix|support)/([A-Z][A-Z0-9]+-[0-9]+|[0-9]+)/[a-z0-9]+([.-][a-z0-9]+)*$'
+          CC_RE='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/-]+\))?!?: [^ ].*$'
+          [[ "$BRANCH" =~ $BRANCH_RE ]] || err "branch '$BRANCH' must be <type>/<TASK>/<slug>"
+          while read -r sha sig parents; do
+            [[ "$sig" == N ]] && err "commit $sha is not signed"
+            [[ "$parents" == *" "* ]] && continue
+            msg="$(git log -1 --format=%B "$sha")"
+            [[ "$(head -n1 <<< "$msg")" =~ $CC_RE ]] || err "commit $sha is not a Conventional Commit"
+            grep -qiE '^co-authored-by:.*\[bot\]|^generated (with|by) ' <<< "$msg" && err "commit $sha has a bot attribution line"
+          done < <(git log --format='%H %G? %P' "$BASE..$HEAD")
+          # The spec gate runs locally (pre-commit): specs live in a private repo CI can't read.
+          exit $fail
+
+  secrets:
+    name: secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0 }
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.gitleaks
+          key: gitleaks-${{ env.GITLEAKS_VERSION }}-linux-x64
+      - name: gitleaks (pinned binary; history and working tree)
+        run: |
+          set -e
+          bin="$HOME/.gitleaks/gitleaks"
+          if [ ! -x "$bin" ]; then
+            mkdir -p "$HOME/.gitleaks"
+            curl -fsSL --retry 5 --retry-all-errors "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz -C "$HOME/.gitleaks" gitleaks
+          fi
+          "$bin" git --redact --no-banner --exit-code 1 .
+          "$bin" dir --redact --no-banner --exit-code 1 .
