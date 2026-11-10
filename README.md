@@ -30,7 +30,8 @@ English and Brazilian Portuguese.
 
 | Lesson | Tutorial | Benchmark |
 |---|---|---|
-| *(coming soon)* | - | - |
+| Memory Pool | [English](lessons/MemoryPool/Tutorial/en.md) · [Português](lessons/MemoryPool/Tutorial/pt-br.md) | [Results](lessons/MemoryPool/Benchmark.md) |
+
 
 ## Getting started
 
