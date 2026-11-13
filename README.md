@@ -32,6 +32,7 @@ English and Brazilian Portuguese.
 |---|---|---|
 | Memory Pool | [English](lessons/MemoryPool/Tutorial/en.md) · [Português](lessons/MemoryPool/Tutorial/pt-br.md) | [Results](lessons/MemoryPool/Benchmark.md) |
 | Vector vs List | [English](lessons/VectorVsList/Tutorial/en.md) · [Português](lessons/VectorVsList/Tutorial/pt-br.md) | [Results](lessons/VectorVsList/Benchmark.md) |
+| Contiguous Objects | [English](lessons/ContiguousObjects/Tutorial/en.md) · [Português](lessons/ContiguousObjects/Tutorial/pt-br.md) | [Results](lessons/ContiguousObjects/Benchmark.md) |
 
 
 ## Getting started
