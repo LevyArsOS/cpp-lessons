@@ -31,6 +31,7 @@ English and Brazilian Portuguese.
 | Lesson | Tutorial | Benchmark |
 |---|---|---|
 | Memory Pool | [English](lessons/MemoryPool/Tutorial/en.md) · [Português](lessons/MemoryPool/Tutorial/pt-br.md) | [Results](lessons/MemoryPool/Benchmark.md) |
+| Vector vs List | [English](lessons/VectorVsList/Tutorial/en.md) · [Português](lessons/VectorVsList/Tutorial/pt-br.md) | [Results](lessons/VectorVsList/Benchmark.md) |
 
 
 ## Getting started
