@@ -13,4 +13,5 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Free-list pool | A fixed-capacity object allocator maintaining an intrusive singly linked list of recycled slots | Linear arena allocator |
 | Slab allocator | An allocator carving memory into fixed-size chunks for same-sized object types | General-purpose variable allocator |
 | Swap-and-pop | $O(1)$ removal from a contiguous array by overwriting the target slot with the back element and popping | Order-preserving `std::vector::erase` ($O(n)$) |
+| Pointer chasing | Following scattered heap pointers during iteration, defeating CPU hardware prefetching | Linear contiguous traversal |
 
