@@ -14,4 +14,5 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Slab allocator | An allocator carving memory into fixed-size chunks for same-sized object types | General-purpose variable allocator |
 | Swap-and-pop | $O(1)$ removal from a contiguous array by overwriting the target slot with the back element and popping | Order-preserving `std::vector::erase` ($O(n)$) |
 | Pointer chasing | Following scattered heap pointers during iteration, defeating CPU hardware prefetching | Linear contiguous traversal |
+| SoA (Structure of Arrays) | Storing each field of an entity collection in its own contiguous array (`x[]`, `y[]`, `z[]`) for maximum cache-line density | AoS (`std::vector<Entity>`) |
 
