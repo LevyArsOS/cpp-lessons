@@ -15,4 +15,5 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Swap-and-pop | $O(1)$ removal from a contiguous array by overwriting the target slot with the back element and popping | Order-preserving `std::vector::erase` ($O(n)$) |
 | Pointer chasing | Following scattered heap pointers during iteration, defeating CPU hardware prefetching | Linear contiguous traversal |
 | SoA (Structure of Arrays) | Storing each field of an entity collection in its own contiguous array (`x[]`, `y[]`, `z[]`) for maximum cache-line density | AoS (`std::vector<Entity>`) |
+| Static dispatch (CRTP) | Compile-time polymorphism via Curiously Recurring Template Pattern enabling full inlining without vtable indirection | Dynamic `virtual` dispatch |
 
