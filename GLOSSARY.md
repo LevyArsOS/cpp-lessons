@@ -10,3 +10,10 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Benchmark | A benchmark executable measuring the lesson's scenarios; run on demand, never in `scripts/check` | A unit test |
 | Hot path | Per-frame or per-tick simulation code executed thousands of times per frame | One-time initialization or loading code |
 | Arena allocator | Contiguous buffer allocator that advances a pointer per allocation and resets in bulk | General-purpose heap (`new`/`delete`) |
+| Free-list pool | A fixed-capacity object allocator maintaining an intrusive singly linked list of recycled slots | Linear arena allocator |
+| Slab allocator | An allocator carving memory into fixed-size chunks for same-sized object types | General-purpose variable allocator |
+| Swap-and-pop | $O(1)$ removal from a contiguous array by overwriting the target slot with the back element and popping | Order-preserving `std::vector::erase` ($O(n)$) |
+| Pointer chasing | Following scattered heap pointers during iteration, defeating CPU hardware prefetching | Linear contiguous traversal |
+| SoA (Structure of Arrays) | Storing each field of an entity collection in its own contiguous array (`x[]`, `y[]`, `z[]`) for maximum cache-line density | AoS (`std::vector<Entity>`) |
+| Static dispatch (CRTP) | Compile-time polymorphism via Curiously Recurring Template Pattern enabling full inlining without vtable indirection | Dynamic `virtual` dispatch |
+
