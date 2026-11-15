@@ -16,4 +16,5 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Pointer chasing | Following scattered heap pointers during iteration, defeating CPU hardware prefetching | Linear contiguous traversal |
 | SoA (Structure of Arrays) | Storing each field of an entity collection in its own contiguous array (`x[]`, `y[]`, `z[]`) for maximum cache-line density | AoS (`std::vector<Entity>`) |
 | Static dispatch (CRTP) | Compile-time polymorphism via Curiously Recurring Template Pattern enabling full inlining without vtable indirection | Dynamic `virtual` dispatch |
+| Heterogeneous lookup | Querying an associative container (`std::unordered_map`) via `std::string_view` (`is_transparent`) without constructing a temporary `std::string` key | Allocating a `std::string` key per lookup |
 

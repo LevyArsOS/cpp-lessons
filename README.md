@@ -35,6 +35,7 @@ English and Brazilian Portuguese.
 | Contiguous Objects | [English](lessons/ContiguousObjects/Tutorial/en.md) · [Português](lessons/ContiguousObjects/Tutorial/pt-br.md) | [Results](lessons/ContiguousObjects/Benchmark.md) |
 | SoA vs AoS | [English](lessons/SoaVsAos/Tutorial/en.md) · [Português](lessons/SoaVsAos/Tutorial/pt-br.md) | [Results](lessons/SoaVsAos/Benchmark.md) |
 | Static Dispatch | [English](lessons/StaticDispatch/Tutorial/en.md) · [Português](lessons/StaticDispatch/Tutorial/pt-br.md) | [Results](lessons/StaticDispatch/Benchmark.md) |
+| String View & SSO | [English](lessons/StringViewSso/Tutorial/en.md) · [Português](lessons/StringViewSso/Tutorial/pt-br.md) | [Results](lessons/StringViewSso/Benchmark.md) |
 
 
 ## Getting started
