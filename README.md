@@ -28,13 +28,39 @@ English and Brazilian Portuguese.
 
 ## Topics
 
-| Lesson | Tutorial | Benchmark |
-|---|---|---|
-| Memory Pool | [English](lessons/MemoryPool/Tutorial/en.md) · [Português](lessons/MemoryPool/Tutorial/pt-br.md) | [Results](lessons/MemoryPool/Benchmark.md) |
-| Vector vs List | [English](lessons/VectorVsList/Tutorial/en.md) · [Português](lessons/VectorVsList/Tutorial/pt-br.md) | [Results](lessons/VectorVsList/Benchmark.md) |
-| Contiguous Objects | [English](lessons/ContiguousObjects/Tutorial/en.md) · [Português](lessons/ContiguousObjects/Tutorial/pt-br.md) | [Results](lessons/ContiguousObjects/Benchmark.md) |
-| SoA vs AoS | [English](lessons/SoaVsAos/Tutorial/en.md) · [Português](lessons/SoaVsAos/Tutorial/pt-br.md) | [Results](lessons/SoaVsAos/Benchmark.md) |
-| Static Dispatch | [English](lessons/StaticDispatch/Tutorial/en.md) · [Português](lessons/StaticDispatch/Tutorial/pt-br.md) | [Results](lessons/StaticDispatch/Benchmark.md) |
+Lessons are grouped into progressive hardware optimization learning paths:
+
+```mermaid
+flowchart LR
+    M["1. Memory &amp; Allocators<br/>(MemoryPool, StringViewSso)"] --> D["2. Data Layout &amp; Cache<br/>(VectorVsList, ContiguousObjects, SoaVsAos)"]
+    D --> C["3. Dispatch &amp; Control Flow<br/>(StaticDispatch)"]
+    C --> P["4. Concurrency &amp; Serialization<br/>(Planned)"]
+```
+
+### 1. Memory & Allocators
+
+| Lesson | Tutorial | Benchmark | Focus |
+|---|---|---|---|
+| Memory Pool | [English](lessons/MemoryPool/Tutorial/en.md) · [Português](lessons/MemoryPool/Tutorial/pt-br.md) | [Results](lessons/MemoryPool/Benchmark.md) | Free-list pools & linear arenas vs `new`/`delete` |
+| String View & SSO | [English](lessons/StringViewSso/Tutorial/en.md) · [Português](lessons/StringViewSso/Tutorial/pt-br.md) | [Results](lessons/StringViewSso/Benchmark.md) | Zero-alloc lookups (`is_transparent`) & string interning |
+
+### 2. Data Layout & Cache
+
+| Lesson | Tutorial | Benchmark | Focus |
+|---|---|---|---|
+| Vector vs List | [English](lessons/VectorVsList/Tutorial/en.md) · [Português](lessons/VectorVsList/Tutorial/pt-br.md) | [Results](lessons/VectorVsList/Benchmark.md) | Contiguous traversal & $O(1)$ swap-and-pop removal |
+| Contiguous Objects | [English](lessons/ContiguousObjects/Tutorial/en.md) · [Português](lessons/ContiguousObjects/Tutorial/pt-br.md) | [Results](lessons/ContiguousObjects/Benchmark.md) | `std::vector<T>` values vs scattered `unique_ptr<T>` |
+| SoA vs AoS | [English](lessons/SoaVsAos/Tutorial/en.md) · [Português](lessons/SoaVsAos/Tutorial/pt-br.md) | [Results](lessons/SoaVsAos/Benchmark.md) | Cache-line density, hot/cold splitting & SIMD |
+
+### 3. Dispatch & Control Flow
+
+| Lesson | Tutorial | Benchmark | Focus |
+|---|---|---|---|
+| Static Dispatch | [English](lessons/StaticDispatch/Tutorial/en.md) · [Português](lessons/StaticDispatch/Tutorial/pt-br.md) | [Results](lessons/StaticDispatch/Benchmark.md) | Homogeneous CRTP buckets vs `virtual` vtable dispatch |
+
+### 4. Concurrency & Serialization
+
+Planned track covering lock-free queues, false sharing, and zero-copy binary serialization.
 
 
 ## Getting started

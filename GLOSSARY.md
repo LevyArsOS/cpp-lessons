@@ -16,4 +16,9 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Pointer chasing | Following scattered heap pointers during iteration, defeating CPU hardware prefetching | Linear contiguous traversal |
 | SoA (Structure of Arrays) | Storing each field of an entity collection in its own contiguous array (`x[]`, `y[]`, `z[]`) for maximum cache-line density | AoS (`std::vector<Entity>`) |
 | Static dispatch (CRTP) | Compile-time polymorphism via Curiously Recurring Template Pattern enabling full inlining without vtable indirection | Dynamic `virtual` dispatch |
+| Heterogeneous lookup | Querying an associative container (`std::unordered_map`) via `std::string_view` (`is_transparent`) without constructing a temporary `std::string` key | Allocating a `std::string` key per lookup |
+| Hardware prefetcher | CPU unit that detects sequential or strided memory access patterns and loads upcoming 64-byte cache lines into L1/L2 before instructions request them | Software `__builtin_prefetch` hints |
+| Translation Lookaside Buffer (TLB) | Small hardware cache translating virtual memory addresses to physical page addresses; scattered heap allocations increase TLB misses | CPU L1/L2/L3 data cache |
+| Branch Target Buffer (BTB) | CPU predictor caching the target address of indirect jumps and `virtual` calls; shuffled polymorphic types trigger frequent BTB mispredictions | Conditional branch direction predictor |
+| Inlining | Compiler optimization replacing a function call with the callee body directly at the call site, unlocking constant propagation and SIMD vectorization | Indirect `virtual` call (`call *(%rax)`) |
 
