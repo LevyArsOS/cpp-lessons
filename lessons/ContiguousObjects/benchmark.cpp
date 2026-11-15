@@ -1,6 +1,6 @@
 #include "ContiguousObjects/include/particle_systems.hpp"
+#include "common/bench_utils.hpp"
 
-#include <chrono>
 #include <cstddef>
 #include <iomanip>
 #include <iostream>
@@ -13,20 +13,15 @@ int main() {
     contiguous_objects::PointerParticleSystem ptr_sys(count, true);
     contiguous_objects::ContiguousParticleSystem val_sys(count);
 
-    auto t0 = std::chrono::high_resolution_clock::now();
-    ptr_sys.step(dt, frames);
-    volatile double ptr_sum = ptr_sys.checksum();
-    auto t1 = std::chrono::high_resolution_clock::now();
+    double ptr_ms = bench::measure_ms([&]() {
+        ptr_sys.step(dt, frames);
+        bench::do_not_optimize(ptr_sys.checksum());
+    });
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    val_sys.step(dt, frames);
-    volatile double val_sum = val_sys.checksum();
-    auto t3 = std::chrono::high_resolution_clock::now();
-
-    double ptr_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-    double val_ms = std::chrono::duration<double, std::milli>(t3 - t2).count();
-    (void)ptr_sum;
-    (void)val_sum;
+    double val_ms = bench::measure_ms([&]() {
+        val_sys.step(dt, frames);
+        bench::do_not_optimize(val_sys.checksum());
+    });
 
     std::cout << std::fixed << std::setprecision(3);
     std::cout << "ContiguousObjects (" << count << " particles, " << frames << " frames):\n";
