@@ -1,22 +1,69 @@
 #!/usr/bin/env bash
-# Build all lesson tests with warnings as errors and execute them. Benchmarks are not run here.
+# Build all lesson tests and benchmarks with warnings as errors, run tests, and run ASan/UBSan when supported.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+CXX_BIN="${CXX:-g++}"
+if ! command -v "$CXX_BIN" >/dev/null 2>&1; then
+  CXX_BIN="c++"
+fi
+
+probe_sanitizers() {
+  local probe_bin
+  probe_bin="$(mktemp)"
+  if "$CXX_BIN" -std=c++20 -fsanitize=address,undefined -fno-omit-frame-pointer -x c++ - -o "$probe_bin" <<< 'int main(){return 0;}' 2>/dev/null; then
+    rm -f "$probe_bin"
+    return 0
+  fi
+  rm -f "$probe_bin"
+  return 1
+}
 
 if command -v cmake >/dev/null 2>&1 && command -v ctest >/dev/null 2>&1; then
   cmake -B build -DCMAKE_BUILD_TYPE=Release
   cmake --build build --config Release
   ctest --test-dir build --output-on-failure
+
+  if probe_sanitizers; then
+    cmake -B build-san -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZERS=ON
+    cmake --build build-san
+    ctest --test-dir build-san --output-on-failure
+  else
+    echo "Warning: ASan/UBSan not supported by $CXX_BIN; skipping sanitizer pass."
+  fi
   exit 0
 fi
 
-command -v g++ >/dev/null 2>&1 || { echo "g++ or cmake not found" >&2; exit 1; }
-mkdir -p build/bin
-shopt -s nullglob
-tests=(tests/**/*_test.cpp tests/*_test.cpp)
+command -v "$CXX_BIN" >/dev/null 2>&1 || { echo "g++ or cmake not found" >&2; exit 1; }
+
+mkdir -p build/bin build/bench
+shopt -s globstar nullglob
+
+tests=(tests/**/*_test.cpp)
 for src in "${tests[@]}"; do
   out="build/bin/$(basename "${src%.cpp}")"
-  g++ -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Ilessons "$src" -o "$out"
+  "$CXX_BIN" -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Ilessons "$src" -o "$out"
   "$out"
 done
-echo "All C++ checks passed (${#tests[@]} test suites)."
+
+benchmarks=(lessons/*/benchmark.cpp)
+for src in "${benchmarks[@]}"; do
+  lesson_name="$(basename "$(dirname "$src")")"
+  out="build/bench/${lesson_name}_benchmark"
+  "$CXX_BIN" -std=c++20 -O2 -Wall -Wextra -Wpedantic -Werror -Ilessons "$src" -o "$out"
+done
+echo "Compiled ${#benchmarks[@]} benchmark targets."
+
+if probe_sanitizers; then
+  mkdir -p build/san
+  for src in "${tests[@]}"; do
+    out="build/san/$(basename "${src%.cpp}")"
+    "$CXX_BIN" -std=c++20 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wextra -Wpedantic -Werror -Ilessons "$src" -o "$out"
+    "$out"
+  done
+  echo "All ASan/UBSan checks passed (${#tests[@]} test suites)."
+else
+  echo "Warning: ASan/UBSan not supported by $CXX_BIN; skipping sanitizer pass."
+fi
+
+echo "All C++ checks passed (${#tests[@]} test suites, ${#benchmarks[@]} benchmark targets compiled)."
