@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here. Format: [Keep a Changelog](https://keepachangelog.com), versioning: [SemVer](https://semver.org).
 
+## [0.2.0](https://github.com/LevyArsOS/cpp-lessons/compare/v0.1.0...v0.2.0) - 2026-11-15
+
+### Added
+- **common:** add bench_utils.hpp and unit tests [#28] (ecd8e1a)
+- **string-view-sso:** add Naive, StringView, and Interned catalogs [#6] (ec8746e)
+
+### Fixed
+- **cmake:** keep assertions enabled for test targets in Release builds [#36] (7dc6bcf)
+
+### Documentation
+- **readme:** organize learning paths and expand glossary [#27] (d02b028)
+- **string-view-sso:** add benchmark results, bilingual tutorials, and glossary [#6] (c22f1ce)
+
 ## [0.1.0] - 2026-11-14
 
 ### Added
