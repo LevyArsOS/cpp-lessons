@@ -24,7 +24,7 @@ Even when the crates themselves are identical (`32` bytes each), walking to rand
 
 ## Hardware and Memory Layout
 
-When `PointerParticleSystem` iterates `std::vector<std::unique_ptr<Particle>>`, it pays **double indirection** plus **Translation Lookaside Buffer (TLB)** pressure:
+When `PointerParticleSystem` iterates `std::vector<std::unique_ptr<Particle>>`, it pays **double indirection** plus **Translation Lookaside Buffer (TLB)** pressure (the TLB is a tiny hardware address-book cache that translates virtual addresses into physical RAM pages; jumping across random pages causes expensive TLB misses):
 
 ```text
 std::vector<std::unique_ptr<Particle>> (8-byte pointers -> scattered 4 KB OS pages)
@@ -40,11 +40,16 @@ std::vector<Particle> (contiguous 32-byte values)
 
 ```mermaid
 flowchart LR
-    subgraph Scattered["PointerParticleSystem (2-Step Load)"]
-        V["particles_[i] (L1/L2 hit)"] -->|"Dereference ptr"| H["Heap Particle @ random page (L3/RAM + TLB miss)"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
+    subgraph Scattered["PointerParticleSystem (2-Step Load + Random Hops)"]
+        V["particles_[i]<br/>8 B pointer (L1/L2 hit)"]:::warn -->|"Dereference ptr<br/>(TLB + L3/RAM miss)"| H["Heap Particle @ random 4 KB page<br/>32 B scattered"]:::slow
     end
-    subgraph Flat["ContiguousParticleSystem (1-Step Stream)"]
-        C["particles_[0] | particles_[1] | particles_[2] ..."] -->|"Hardware Prefetcher"| CPU["CPU Registers"]
+    subgraph Flat["ContiguousParticleSystem (1-Step Sequential Stream)"]
+        C["64 B Cache Line<br/>Particle 0 (32 B) | Particle 1 (32 B)"]:::fast -->|"Hardware Prefetcher<br/>(predictable stride)"| CPU["CPU Registers<br/>zero stalls"]:::cpu
     end
 ```
 
@@ -95,7 +100,7 @@ There is zero heap allocation per particle and zero pointer chasing. The hardwar
 ### When NOT to Use `std::vector<T>` by Value
 
 - **Pointer/reference stability required**: `std::vector<T>` relocates elements on reallocation and shifts elements on `erase`. If external systems store raw `T*` pointers, use indices/handles or a slot map.
-- **Runtime polymorphism via base class**: `std::vector<Base>` slices derived types (`object slicing`). Use `std::variant`, homogeneous typed buckets, or `std::unique_ptr<Base>` only when true open-set polymorphism is needed.
+- **Runtime polymorphism via base class**: `std::vector<Base>` slices derived types (**object slicing**—chopping off derived-class fields when copied by value into a `Base` slot). Use `std::variant`, homogeneous typed buckets, or `std::unique_ptr<Base>` only when true open-set polymorphism is needed.
 - **Very large, rarely moved objects**: If `T` is several kilobytes and frequently sorted or reordered, sorting a lightweight index array (`std::vector<std::uint32_t>`) can be cheaper than moving `T`.
 
 ---

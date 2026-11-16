@@ -24,7 +24,7 @@ Mesmo quando as caixas são idênticas (`32` bytes cada), caminhar até pratelei
 
 ## Hardware e Layout de Memória
 
-Quando `PointerParticleSystem` itera `std::vector<std::unique_ptr<Particle>>`, ele paga **dupla indireção** além de pressão no **Translation Lookaside Buffer (TLB)**:
+Quando `PointerParticleSystem` itera `std::vector<std::unique_ptr<Particle>>`, ele paga **dupla indireção** além de pressão no **Translation Lookaside Buffer (TLB)** (o TLB é uma pequena agenda de endereços em hardware que traduz endereços virtuais em páginas físicas da RAM; saltar entre páginas aleatórias causa falhas caras no TLB):
 
 ```text
 std::vector<std::unique_ptr<Particle>> (ponteiros de 8 bytes -> páginas de 4 KB espalhadas)
@@ -40,11 +40,16 @@ std::vector<Particle> (valores contíguos de 32 bytes)
 
 ```mermaid
 flowchart LR
-    subgraph Scattered["PointerParticleSystem (Leitura em 2 Passos)"]
-        V["particles_[i] (hit em L1/L2)"] -->|"Desreferencia ptr"| H["Particle no Heap @ página aleatória (L3/RAM + TLB miss)"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
+    subgraph Scattered["PointerParticleSystem (Leitura em 2 Passos + Saltos Aleatórios)"]
+        V["particles_[i]<br/>ponteiro 8 B (hit em L1/L2)"]:::warn -->|"Desreferencia ptr<br/>(TLB + L3/RAM miss)"| H["Particle no Heap @ página 4 KB aleatória<br/>32 B espalhados"]:::slow
     end
-    subgraph Flat["ContiguousParticleSystem (Fluxo em 1 Passo)"]
-        C["particles_[0] | particles_[1] | particles_[2] ..."] -->|"Hardware Prefetcher"| CPU["Registradores da CPU"]
+    subgraph Flat["ContiguousParticleSystem (Fluxo Sequencial em 1 Passo)"]
+        C["Cache Line 64 B<br/>Particle 0 (32 B) | Particle 1 (32 B)"]:::fast -->|"Hardware Prefetcher<br/>(stride previsível)"| CPU["Registradores da CPU<br/>zero travamentos"]:::cpu
     end
 ```
 
@@ -95,7 +100,7 @@ Há zero alocações individuais no heap e zero pointer chasing. O prefetcher de
 ### Quando NÃO Usar `std::vector<T>` por Valor
 
 - **Estabilidade de ponteiro/referência obrigatória**: `std::vector<T>` realoca elementos ao crescer e desloca elementos em `erase`. Se outros sistemas guardam `T*` diretamente, prefira índices/handles ou um slot map.
-- **Polimorfismo em tempo de execução via classe base**: `std::vector<Base>` causa *object slicing* em tipos derivados. Use `std::variant`, buckets homogêneos ou `std::unique_ptr<Base>` apenas quando polimorfismo aberto for indispensável.
+- **Polimorfismo em tempo de execução via classe base**: `std::vector<Base>` causa *object slicing* em tipos derivados (os campos da subclasse são cortados fora ao copiar por valor para um slot `Base`). Use `std::variant`, buckets homogêneos ou `std::unique_ptr<Base>` apenas quando polimorfismo aberto for indispensável.
 - **Objetos muito grandes raramente movidos**: Se `T` tiver vários kilobytes e for reordenado com frequência, ordenar um vetor leve de índices (`std::vector<std::uint32_t>`) pode ser mais barato do que mover `T`.
 
 ---

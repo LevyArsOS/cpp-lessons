@@ -32,22 +32,27 @@ Um `SparseSet<T>` mantém três arrays:
 
 ```mermaid
 flowchart LR
-    subgraph Sparse["sparse_ (indexado por EntityId)"]
-        S0["[0]: INVALID"]
-        S2["[2]: 0"]
-        S7["[7]: 1"]
-        S11["[11]: 2"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
+    subgraph Sparse["sparse_ (busca direta O(1) por EntityId)"]
+        S0["[0]: INVALID<br/>(sem componente)"]:::slow
+        S2["[2]: idx 0"]:::cpu
+        S7["[7]: idx 1"]:::cpu
+        S11["[11]: idx 2"]:::cpu
     end
 
     subgraph Dense["Arrays Densos Compactos (contíguos em L1/L2)"]
-        D0["dense[0]: Entity 2 | Vel(2)"]
-        D1["dense[1]: Entity 7 | Vel(7)"]
-        D2["dense[2]: Entity 11 | Vel(11)"]
+        D0["dense[0]: Entity 2 | Vel(2)"]:::fast
+        D1["dense[1]: Entity 7 | Vel(7)"]:::fast
+        D2["dense[2]: Entity 11 | Vel(11)"]:::fast
     end
 
-    S2 --> D0
-    S7 --> D1
-    S11 --> D2
+    S2 -->|"índice direto O(1)"| D0
+    S7 -->|"índice direto O(1)"| D1
+    S11 -->|"índice direto O(1)"| D2
 ```
 
 Ao remover uma entidade, `SparseSet<T>::remove(id)` executa um **swap-and-pop** em $O(1)$: move o último elemento de `dense_data_` e `dense_entities_` para a posição removida, atualiza `sparse_[moved_entity]` e faz `pop_back()`.
@@ -62,7 +67,7 @@ Em [sparse_set.hpp](../include/sparse_set.hpp), `UnorderedMapStorage<T>` encapsu
 
 ### 2. `FlatOpenMapStorage` (Hash Table de Endereçamento Aberto)
 
-`FlatOpenMapStorage<T>` coloca todos os slots em um único `std::vector<Slot>` com linear probing e tombstones. Isso elimina alocações por nó (`0.813 ms` na remoção contra `15.390 ms`), **mas** iterar sobre os elementos ativos exige varrer slots vazios e tombstones por toda a tabela (`111.301 ms`!).
+`FlatOpenMapStorage<T>` coloca todos os slots em um único `std::vector<Slot>` com linear probing e **tombstones** (marcadores de "removido" deixados nos slots vazios para não quebrar buscas futuras na tabela hash). Isso elimina alocações por nó (`0.813 ms` na remoção contra `15.390 ms`), **mas** iterar sobre os elementos ativos exige varrer slots vazios e tombstones por toda a tabela (`111.301 ms`!).
 
 ### 3. `SparseSet<T>` (Armazenamento Denso de ECS)
 
