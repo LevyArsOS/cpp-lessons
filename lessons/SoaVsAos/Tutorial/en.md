@@ -39,11 +39,16 @@ Cache Line [0..63]:     | x[0] | x[1] | x[2] | x[3] | ... | x[15] |  --> 16 floa
 
 ```mermaid
 flowchart LR
-    subgraph AoS["AoS: 500k x 128 B = 64 MB (> 32 MB L3 Cache)"]
-        A0["Particle 0 (24B hot + 104B cold)"] --> A1["Particle 1 (24B hot + 104B cold)"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
+    subgraph AoS["AoS: 500k x 128 B = 64 MB (&gt; 32 MB L3 Cache)"]
+        A0["Particle 0<br/>24 B hot + 104 B cold"]:::slow -->|"pulls 2 cache lines<br/>81.25% wasted"| A1["Particle 1<br/>24 B hot + 104 B cold"]:::slow
     end
     subgraph SoA["SoA: 6 x 2 MB = 12 MB Hot Working Set"]
-        S0["x[0..n] | y[0..n] | z[0..n] | vx[0..n] | vy[0..n] | vz[0..n]"]
+        S0["x[0..n] | y[0..n] | z[0..n]<br/>16 floats per 64 B cache line (100% hot)"]:::fast -->|"SIMD vector load<br/>(4-8 floats/cycle)"| CPU["CPU SIMD Registers"]:::cpu
     end
 ```
 
@@ -88,7 +93,7 @@ for (std::size_t i = 0; i < n; ++i) {
 }
 ```
 
-Because `__restrict` promises the compiler that `px`, `py`, `pz`, `pvx`, `pvy`, and `pvz` do not overlap, GCC/Clang can emit packed SIMD instructions (SSE/AVX) operating on 4 or 8 floats per cycle.
+Because `__restrict` promises the compiler that `px`, `py`, `pz`, `pvx`, `pvy`, and `pvz` do not overlap in memory (no pointer aliasing), GCC/Clang can emit packed **SIMD** (Single Instruction, Multiple Data) instructions such as SSE/AVX that process 4 or 8 floats in a single CPU cycle.
 
 ---
 

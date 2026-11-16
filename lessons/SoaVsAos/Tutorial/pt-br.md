@@ -39,11 +39,16 @@ Cache Line [0..63]:     | x[0] | x[1] | x[2] | x[3] | ... | x[15] |  --> 16 floa
 
 ```mermaid
 flowchart LR
-    subgraph AoS["AoS: 500k x 128 B = 64 MB (> 32 MB Cache L3)"]
-        A0["Particle 0 (24B hot + 104B cold)"] --> A1["Particle 1 (24B hot + 104B cold)"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
+    subgraph AoS["AoS: 500k x 128 B = 64 MB (&gt; 32 MB Cache L3)"]
+        A0["Particle 0<br/>24 B quentes + 104 B frios"]:::slow -->|"puxa 2 cache lines<br/>81,25% desperdiçado"| A1["Particle 1<br/>24 B quentes + 104 B frios"]:::slow
     end
     subgraph SoA["SoA: 6 x 2 MB = 12 MB de Working Set Quente"]
-        S0["x[0..n] | y[0..n] | z[0..n] | vx[0..n] | vy[0..n] | vz[0..n]"]
+        S0["x[0..n] | y[0..n] | z[0..n]<br/>16 floats por cache line de 64 B (100% útil)"]:::fast -->|"Leitura vetorial SIMD<br/>(4-8 floats/ciclo)"| CPU["Registradores SIMD da CPU"]:::cpu
     end
 ```
 
@@ -88,7 +93,7 @@ for (std::size_t i = 0; i < n; ++i) {
 }
 ```
 
-Como `__restrict` garante ao compilador que `px`, `py`, `pz`, `pvx`, `pvy` e `pvz` não se sobrepõem, GCC e Clang geram instruções SIMD (SSE/AVX) processando 4 ou 8 floats por ciclo.
+Como `__restrict` garante ao compilador que `px`, `py`, `pz`, `pvx`, `pvy` e `pvz` não se sobrepõem na memória (sem *aliasing* de ponteiros), GCC e Clang geram instruções **SIMD** (*Single Instruction, Multiple Data*, como SSE/AVX) processando 4 ou 8 floats em um único ciclo de CPU.
 
 ---
 

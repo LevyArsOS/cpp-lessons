@@ -23,7 +23,7 @@ O `std::list` tenta evitar o deslocamento colocando cada aluno em uma sala separ
 
 ## Hardware e Layout de Memória
 
-Uma CPU moderna não lê bytes isolados da RAM; ela busca **linhas de cache de 64 bytes** e conta com um **hardware prefetcher** que detecta acessos sequenciais.
+Uma CPU moderna não lê bytes isolados da RAM; ela busca **linhas de cache de 64 bytes** e conta com um **hardware prefetcher** (um circuito da CPU que detecta leituras sequenciais e traz a próxima cache line antes mesmo de o código pedir).
 
 ```text
 std::list<Entity> (nós espalhados no heap, 40 bytes cada + metadados do alocador)
@@ -37,11 +37,15 @@ std::vector<Entity> (buffer contíguo, 20 bytes por Entity)
 
 ```mermaid
 flowchart LR
-    subgraph List["std::list (Pointer Chasing)"]
-        N0["Nó 0 @ 0x1040"] -->|next ptr| N1["Nó 1 @ 0x7A90"] -->|next ptr| N2["Nó 2 @ 0x3F10"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+
+    subgraph List["std::list (Pointer Chasing no Heap)"]
+        N0["Nó 0 @ 0x1040<br/>40 B + cabeçalho heap"]:::slow -->|"next ptr aleatório<br/>(cache miss)"| N1["Nó 1 @ 0x7A90<br/>40 B + cabeçalho heap"]:::slow -->|"next ptr aleatório<br/>(cache miss)"| N2["Nó 2 @ 0x3F10<br/>40 B + cabeçalho heap"]:::slow
     end
-    subgraph Vec["std::vector (Buffer Contíguo)"]
-        V0["Entity 0 | Entity 1 | Entity 2 | Entity 3 ..."]
+    subgraph Vec["std::vector (Cache Line Contígua de 64 B)"]
+        V0["Entity 0 (20 B) | Entity 1 (20 B) | Entity 2 (20 B)<br/>3 entidades por cache line"]:::fast -->|"Hardware Prefetcher<br/>(stride sequencial)"| CPU["Cache L1 e Registradores da CPU"]:::cpu
     end
 ```
 

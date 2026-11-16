@@ -23,7 +23,7 @@ Instead, you ask student #100 in the very last seat to move into empty seat #12,
 
 ## Hardware and Memory Layout
 
-A modern CPU does not fetch single bytes from RAM; it pulls **64-byte cache lines** and relies on a **hardware prefetcher** that detects sequential address strides.
+A modern CPU does not fetch single bytes from RAM; it pulls **64-byte cache lines** and relies on a **hardware prefetcher** (a CPU circuit that detects sequential memory reads and loads the next cache line before you even ask for it).
 
 ```text
 std::list<Entity> (scattered heap nodes, 40 bytes each + allocator metadata)
@@ -37,11 +37,15 @@ std::vector<Entity> (contiguous buffer, 20 bytes per Entity)
 
 ```mermaid
 flowchart LR
-    subgraph List["std::list (Pointer Chasing)"]
-        N0["Node 0 @ 0x1040"] -->|next ptr| N1["Node 1 @ 0x7A90"] -->|next ptr| N2["Node 2 @ 0x3F10"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+
+    subgraph List["std::list (Pointer Chasing Across Heap)"]
+        N0["Node 0 @ 0x1040<br/>40 B + heap header"]:::slow -->|"random next ptr<br/>(cache miss)"| N1["Node 1 @ 0x7A90<br/>40 B + heap header"]:::slow -->|"random next ptr<br/>(cache miss)"| N2["Node 2 @ 0x3F10<br/>40 B + heap header"]:::slow
     end
-    subgraph Vec["std::vector (Contiguous Buffer)"]
-        V0["Entity 0 | Entity 1 | Entity 2 | Entity 3 ..."]
+    subgraph Vec["std::vector (Contiguous 64 B Cache Line)"]
+        V0["Entity 0 (20 B) | Entity 1 (20 B) | Entity 2 (20 B)<br/>3 entities per cache line"]:::fast -->|"Hardware Prefetcher<br/>(sequential stride)"| CPU["CPU L1 Cache &amp; Registers"]:::cpu
     end
 ```
 

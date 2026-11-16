@@ -15,8 +15,8 @@
 
 Imagine 50.000 operadores em uma fábrica, cada um executando uma de 8 instruções diferentes (`apply_behavior<0..7>`):
 
-1. **`VirtualWorld` (dispatch `virtual`)**: Cada operador está em um prédio diferente. Você vai até o operador, pergunta qual manual ele segue (`vptr`), vai até a estante abrir o manual (`vtable`) e lê a instrução (`call *(%rax)`). Não dá para prever o próximo passo porque cada operador é uma surpresa.
-2. **`TagSwitchWorld` / `FnTableWorld` (contíguo, mas embaralhado)**: Todos os 50.000 operadores estão no mesmo corredor (`std::vector<PodEntity>`), mas os 8 tipos estão misturados. O **Branch Target Buffer (BTB)** da CPU erra a previsão quase toda vez.
+1. **`VirtualWorld` (dispatch `virtual`)**: Cada operador está em um prédio diferente. Você vai até o operador, pergunta qual manual ele segue (`vptr`, um ponteiro oculto dentro de cada objeto polimórfico), vai até a estante abrir o manual (`vtable`, uma tabela com os endereços das funções) e lê a instrução (`call *(%rax)`). Não dá para prever o próximo passo porque cada operador é uma surpresa.
+2. **`TagSwitchWorld` / `FnTableWorld` (contíguo, mas embaralhado)**: Todos os 50.000 operadores estão no mesmo corredor (`std::vector<PodEntity>`), mas os 8 tipos estão misturados. O **Branch Target Buffer (BTB)** da CPU — o preditor em hardware que tenta adivinhar para qual endereço um salto indireto ou `switch` vai pular — erra a previsão quase toda vez.
 3. **`CrtpWorld` (buckets homogêneos)**: Você agrupa todos os operadores do Tipo 0 juntos, depois os do Tipo 1, e assim por diante. Agora você dá uma única ordem para 6.250 operadores seguidos—sem manuais, sem adivinhação, na velocidade máxima.
 
 ---
@@ -41,15 +41,20 @@ CrtpEntity<Tag> em std::vector<CrtpEntity<Tag>> homogêneo (16 bytes, 4 por cach
 
 ```mermaid
 flowchart LR
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
     subgraph Virtual["VirtualWorld (3 Leituras Dependentes + Call Indireto)"]
-        U["unique_ptr"] --> V["vptr"] --> T["vtable"] --> C["call *(%rax) (erro de BTB, sem inline)"]
+        U["unique_ptr<br/>(ponteiro heap)"]:::warn -->|"salto 1"| V["vptr<br/>(no objeto)"]:::warn -->|"salto 2"| T["vtable<br/>(tabela de funções)"]:::slow -->|"salto 3"| C["call *(%rax)<br/>erro de BTB, sem inline"]:::slow
     end
     subgraph CRTP["CrtpWorld (Buckets Homogêneos)"]
-        B["std::vector&lt;CrtpEntity&lt;Tag&gt;&gt;"] --> I["Loop Direto com Inlining + SIMD"]
+        B["std::vector&lt;CrtpEntity&lt;Tag&gt;&gt;<br/>structs 16 B, 4 por cache line"]:::fast -->|"dispatch em compilação"| I["Loop Direto com Inlining + SIMD<br/>zero erros de BTB"]:::cpu
     end
 ```
 
-Como um `call *(%rax)` indireto esconde a função de destino em tempo de compilação, ele cria uma barreira que impede o **inlining** e a auto-vetorização do loop.
+Como um `call *(%rax)` indireto esconde a função de destino em tempo de compilação, ele cria uma barreira que impede o **inlining** (copiar o corpo da função diretamente para dentro do loop) e a auto-vetorização.
 
 ---
 

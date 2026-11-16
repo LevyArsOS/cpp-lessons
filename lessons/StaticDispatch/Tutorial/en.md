@@ -15,8 +15,8 @@
 
 Imagine 50,000 workers on an assembly line, each needing one of 8 different instructions (`apply_behavior<0..7>`):
 
-1. **`VirtualWorld` (`virtual` dispatch)**: Every worker stands in a different building. You walk to a worker, ask which manual they follow (`vptr`), walk to the library to open that manual (`vtable`), and read one line (`call *(%rax)`). You cannot prepare the next step in advance because every worker is a surprise.
-2. **`TagSwitchWorld` / `FnTableWorld` (contiguous but shuffled)**: All 50,000 workers now stand in one hallway (`std::vector<PodEntity>`), but the 8 job types are randomly mixed. The CPU's **Branch Target Buffer (BTB)** guesses wrong almost every time.
+1. **`VirtualWorld` (`virtual` dispatch)**: Every worker stands in a different building. You walk to a worker, ask which manual they follow (`vptr`, a hidden pointer stored inside every polymorphic object), walk to the library to open that manual (`vtable`, a lookup table of function addresses), and read one line (`call *(%rax)`). You cannot prepare the next step in advance because every worker is a surprise.
+2. **`TagSwitchWorld` / `FnTableWorld` (contiguous but shuffled)**: All 50,000 workers now stand in one hallway (`std::vector<PodEntity>`), but the 8 job types are randomly mixed. The CPU's **Branch Target Buffer (BTB)**—the hardware predictor that guesses where an indirect jump or `switch` will land next—guesses wrong almost every time.
 3. **`CrtpWorld` (homogeneous buckets)**: You group all Type-0 workers together, then all Type-1 workers, and so on. Now you shout one instruction for 6,250 workers in a row—no manuals, no guessing, full speed.
 
 ---
@@ -41,15 +41,20 @@ CrtpEntity<Tag> in homogeneous std::vector<CrtpEntity<Tag>> (16 bytes, 4 per cac
 
 ```mermaid
 flowchart LR
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
     subgraph Virtual["VirtualWorld (3 Dependent Loads + Indirect Call)"]
-        U["unique_ptr"] --> V["vptr"] --> T["vtable"] --> C["call *(%rax) (BTB miss, no inline)"]
+        U["unique_ptr<br/>(heap ptr)"]:::warn -->|"hop 1"| V["vptr<br/>(inside object)"]:::warn -->|"hop 2"| T["vtable<br/>(fn address table)"]:::slow -->|"hop 3"| C["call *(%rax)<br/>BTB miss, no inline"]:::slow
     end
     subgraph CRTP["CrtpWorld (Homogeneous Buckets)"]
-        B["std::vector&lt;CrtpEntity&lt;Tag&gt;&gt;"] --> I["Direct Inlined Loop + SIMD"]
+        B["std::vector&lt;CrtpEntity&lt;Tag&gt;&gt;<br/>16 B structs, 4 per cache line"]:::fast -->|"compile-time dispatch"| I["Direct Inlined Loop + SIMD<br/>zero BTB misses"]:::cpu
     end
 ```
 
-Because an indirect `call *(%rax)` hides the target function at compile time, it forms an optimization barrier that blocks **inlining** and loop auto-vectorization.
+Because an indirect `call *(%rax)` hides the target function at compile time, it forms an optimization barrier that blocks **inlining** (copying the function body directly into the loop) and loop auto-vectorization.
 
 ---
 

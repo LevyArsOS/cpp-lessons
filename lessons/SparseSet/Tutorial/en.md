@@ -32,22 +32,27 @@ A `SparseSet<T>` maintains three arrays:
 
 ```mermaid
 flowchart LR
-    subgraph Sparse["sparse_ (indexed by EntityId)"]
-        S0["[0]: INVALID"]
-        S2["[2]: 0"]
-        S7["[7]: 1"]
-        S11["[11]: 2"]
+    classDef slow fill:#fee2e2,stroke:#dc2626,color:#111827
+    classDef fast fill:#dcfce7,stroke:#16a34a,color:#111827
+    classDef cpu fill:#dbeafe,stroke:#2563eb,color:#111827
+    classDef warn fill:#fef3c7,stroke:#d97706,color:#111827
+
+    subgraph Sparse["sparse_ (direct O(1) lookup by EntityId)"]
+        S0["[0]: INVALID<br/>(no component)"]:::slow
+        S2["[2]: idx 0"]:::cpu
+        S7["[7]: idx 1"]:::cpu
+        S11["[11]: idx 2"]:::cpu
     end
 
-    subgraph Dense["Packed Dense Arrays (contiguous in L1/L2)"]
-        D0["dense[0]: Entity 2 | Vel(2)"]
-        D1["dense[1]: Entity 7 | Vel(7)"]
-        D2["dense[2]: Entity 11 | Vel(11)"]
+    subgraph Dense["Packed Dense Arrays (contiguous in L1/L2 cache)"]
+        D0["dense[0]: Entity 2 | Vel(2)"]:::fast
+        D1["dense[1]: Entity 7 | Vel(7)"]:::fast
+        D2["dense[2]: Entity 11 | Vel(11)"]:::fast
     end
 
-    S2 --> D0
-    S7 --> D1
-    S11 --> D2
+    S2 -->|"O(1) direct index"| D0
+    S7 -->|"O(1) direct index"| D1
+    S11 -->|"O(1) direct index"| D2
 ```
 
 When an entity is removed, `SparseSet<T>::remove(id)` performs an $O(1)$ **swap-and-pop**: it moves the last element of `dense_data_` and `dense_entities_` into the removed slot, updates `sparse_[moved_entity]`, and pops the back.
@@ -62,7 +67,7 @@ In [sparse_set.hpp](../include/sparse_set.hpp), `UnorderedMapStorage<T>` wraps `
 
 ### 2. `FlatOpenMapStorage` (Open-Addressing Hash Table)
 
-`FlatOpenMapStorage<T>` places all slots in a single contiguous `std::vector<Slot>` using linear probing and tombstones. This removes per-node heap allocations (`0.813 ms` erase vs `15.390 ms`), **but** iterating over active elements must still skip empty and tombstone slots across the entire power-of-two capacity (`111.301 ms`!).
+`FlatOpenMapStorage<T>` places all slots in a single contiguous `std::vector<Slot>` using linear probing and **tombstones** (special "deleted" markers left in vacated slots so subsequent hash searches don't stop early). This removes per-node heap allocations (`0.813 ms` erase vs `15.390 ms`), **but** iterating over active elements must still skip empty and tombstone slots across the entire power-of-two capacity (`111.301 ms`!).
 
 ### 3. `SparseSet<T>` (Dense ECS Storage)
 
