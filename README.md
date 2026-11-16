@@ -32,7 +32,7 @@ Lessons are grouped into progressive hardware optimization learning paths:
 
 ```mermaid
 flowchart LR
-    M["1. Memory &amp; Allocators<br/>(MemoryPool, StringViewSso)"] --> D["2. Data Layout &amp; Cache<br/>(VectorVsList, ContiguousObjects, SoaVsAos)"]
+    M["1. Memory &amp; Allocators<br/>(MemoryPool, StringViewSso)"] --> D["2. Data Layout &amp; Cache<br/>(VectorVsList, ContiguousObjects, SoaVsAos, SparseSet)"]
     D --> C["3. Dispatch &amp; Control Flow<br/>(StaticDispatch)"]
     C --> P["4. Concurrency &amp; Serialization<br/>(Planned)"]
 ```
@@ -51,6 +51,7 @@ flowchart LR
 | Vector vs List | [English](lessons/VectorVsList/Tutorial/en.md) · [Português](lessons/VectorVsList/Tutorial/pt-br.md) | [Results](lessons/VectorVsList/Benchmark.md) | Contiguous traversal & $O(1)$ swap-and-pop removal |
 | Contiguous Objects | [English](lessons/ContiguousObjects/Tutorial/en.md) · [Português](lessons/ContiguousObjects/Tutorial/pt-br.md) | [Results](lessons/ContiguousObjects/Benchmark.md) | `std::vector<T>` values vs scattered `unique_ptr<T>` |
 | SoA vs AoS | [English](lessons/SoaVsAos/Tutorial/en.md) · [Português](lessons/SoaVsAos/Tutorial/pt-br.md) | [Results](lessons/SoaVsAos/Benchmark.md) | Cache-line density, hot/cold splitting & SIMD |
+| Sparse Set | [English](lessons/SparseSet/Tutorial/en.md) · [Português](lessons/SparseSet/Tutorial/pt-br.md) | [Results](lessons/SparseSet/Benchmark.md) | Dense ECS component pools & $O(1)$ swap-and-pop |
 
 ### 3. Dispatch & Control Flow
 
