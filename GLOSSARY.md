@@ -21,4 +21,5 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Translation Lookaside Buffer (TLB) | Small hardware cache translating virtual memory addresses to physical page addresses; scattered heap allocations increase TLB misses | CPU L1/L2/L3 data cache |
 | Branch Target Buffer (BTB) | CPU predictor caching the target address of indirect jumps and `virtual` calls; shuffled polymorphic types trigger frequent BTB mispredictions | Conditional branch direction predictor |
 | Inlining | Compiler optimization replacing a function call with the callee body directly at the call site, unlocking constant propagation and SIMD vectorization | Indirect `virtual` call (`call *(%rax)`) |
+| Sparse set | Dual-array ECS container pairing an `EntityId`-indexed `sparse` array with packed `dense_entities` and `dense_data` arrays for $O(1)$ lookup, $O(1)$ swap-and-pop removal, and contiguous iteration | Hash-bucketed `std::unordered_map` |
 
