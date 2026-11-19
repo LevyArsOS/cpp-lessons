@@ -22,4 +22,5 @@ exactly; a concept that needs a sentence to explain gets an entry here instead.
 | Branch Target Buffer (BTB) | CPU predictor caching the target address of indirect jumps and `virtual` calls; shuffled polymorphic types trigger frequent BTB mispredictions | Conditional branch direction predictor |
 | Inlining | Compiler optimization replacing a function call with the callee body directly at the call site, unlocking constant propagation and SIMD vectorization | Indirect `virtual` call (`call *(%rax)`) |
 | Sparse set | Dual-array ECS container pairing an `EntityId`-indexed `sparse` array with packed `dense_entities` and `dense_data` arrays for $O(1)$ lookup, $O(1)$ swap-and-pop removal, and contiguous iteration | Hash-bucketed `std::unordered_map` |
+| Polymorphic memory resource (`std::pmr`) | C++17 `<memory_resource>` abstraction decoupling container types (`std::pmr::vector`) from their backing `memory_resource*` allocation strategy | Compile-time template allocator (`std::allocator<T>`) |
 

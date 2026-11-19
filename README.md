@@ -32,7 +32,7 @@ Lessons are grouped into progressive hardware optimization learning paths:
 
 ```mermaid
 flowchart LR
-    M["1. Memory &amp; Allocators<br/>(MemoryPool, StringViewSso)"] --> D["2. Data Layout &amp; Cache<br/>(VectorVsList, ContiguousObjects, SoaVsAos, SparseSet)"]
+    M["1. Memory &amp; Allocators<br/>(MemoryPool, StringViewSso, CustomAllocator)"] --> D["2. Data Layout &amp; Cache<br/>(VectorVsList, ContiguousObjects, SoaVsAos, SparseSet)"]
     D --> C["3. Dispatch &amp; Control Flow<br/>(StaticDispatch)"]
     C --> P["4. Concurrency &amp; Serialization<br/>(Planned)"]
 ```
@@ -43,6 +43,7 @@ flowchart LR
 |---|---|---|---|
 | Memory Pool | [English](lessons/MemoryPool/Tutorial/en.md) · [Português](lessons/MemoryPool/Tutorial/pt-br.md) | [Results](lessons/MemoryPool/Benchmark.md) | Free-list pools & linear arenas vs `new`/`delete` |
 | String View & SSO | [English](lessons/StringViewSso/Tutorial/en.md) · [Português](lessons/StringViewSso/Tutorial/pt-br.md) | [Results](lessons/StringViewSso/Benchmark.md) | Zero-alloc lookups (`is_transparent`) & string interning |
+| Custom Allocator (`std::pmr`) | [English](lessons/CustomAllocator/Tutorial/en.md) · [Português](lessons/CustomAllocator/Tutorial/pt-br.md) | [Results](lessons/CustomAllocator/Benchmark.md) | `monotonic_buffer_resource` & `unsynchronized_pool_resource` |
 
 ### 2. Data Layout & Cache
 
